@@ -14,11 +14,49 @@
         input[type="text"] { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         button { margin-left: 8px; padding: 8px 16px; background: #1976d2; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
         button:disabled { background: #aaa; }
+        .knowledge-base-controls {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            border: 1px solid #eee;
+        }
+        .file-upload-area {
+            border: 2px dashed #ccc;
+            padding: 16px;
+            text-align: center;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .upload-progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+        .upload-bar {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
 <div class="chat-container">
     <h2>SpringAI 聊天</h2>
+    <!-- 知识库控制区域 -->
+    <div class="knowledge-base-controls">
+        <label>
+            <input type="checkbox" id="ragToggle" onchange="toggleRagMode()"> 开启知识库问答
+        </label>
+        <div id="uploadSection" style="display:none; margin-top: 10px;">
+            <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.txt" multiple>
+            <button onclick="uploadFile()">上传文件</button>
+        </div>
+    </div>
     <div class="messages" id="messages"></div>
     <div class="input-row">
         <input type="text" id="userInput" placeholder="请输入你的消息..." />
@@ -38,13 +76,71 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    const ragToggle = document.getElementById('ragToggle');
+    const uploadSection = document.getElementById('uploadSection');
+    const fileUpload = document.getElementById('fileUpload');
+
+    function toggleRagMode() {
+        const isChecked = ragToggle.checked;
+        uploadSection.style.display = isChecked ? 'block' : 'none';
+
+        if (isChecked) {
+            appendMessage('system', '知识库模式已开启，可以上传文件到知识库');
+        } else {
+            appendMessage('system', '知识库模式已关闭');
+        }
+    }
+
+    function uploadFile() {
+        const files = fileUpload.files;
+        if (files.length === 0) {
+            alert('请选择要上传的文件');
+            return;
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('file', files[i]);
+        }
+
+
+        fetch('/rag/upload-file', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                hideUploadProgress();
+                if (data.success) {
+                    appendMessage('system', `成功上传 ${data.count} 个文件到知识库`);
+                } else {
+                    appendMessage('system', `上传失败: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                hideUploadProgress();
+                appendMessage('system', '文件上传失败');
+            });
+    }
+
     function sendMessage() {
         const text = userInput.value.trim();
         if (!text) return;
+
         appendMessage('user', text);
         userInput.value = '';
         sendBtn.disabled = true;
-        fetch(`/text?message=${encodeURIComponent(text)}`)
+
+        // 根据是否启用知识库模式选择不同的API
+        const apiUrl = ragToggle.checked ? `/rag/ask?question=${encodeURIComponent(text)}` : `/text?message=${encodeURIComponent(text)}`;
+
+        fetch(apiUrl)
             .then(res => res.text())
             .then(data => {
                 appendMessage('ai', data);
@@ -58,11 +154,15 @@
             });
     }
 
-    userInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
+    function showUploadProgress() {
+        // 实现上传进度显示逻辑
+        console.log('显示上传进度');
+    }
+
+    function hideUploadProgress() {
+        // 隐藏上传进度
+        console.log('隐藏上传进度');
+    }
 </script>
 </body>
 </html> 

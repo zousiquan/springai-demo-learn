@@ -1,6 +1,5 @@
 package org.example.springai.config;
 
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import org.example.springai.controller.WeatherController;
 import org.example.springai.tools.ChatTool;
 import org.springframework.ai.chat.client.ChatClient;
@@ -34,13 +33,11 @@ public class ChatClientConfig {
     }
 
 
-    @Bean
+    @Bean("chatClient")
     public ChatClient chatClient(OpenAiChatModel openAiChatModel,
-                                 DashScopeChatModel dashScopeChatModel,
                                  ChatMemory chatMemory,
                                  ChatTool chatTool,
                                  WeatherController weatherController) {
-        if (apiType.equals("openai")) {
             return ChatClient.builder(openAiChatModel)
                     //系统提示词
                     .defaultSystem("""
@@ -53,11 +50,36 @@ public class ChatClientConfig {
                             new SimpleLoggerAdvisor())
                     .defaultTools(chatTool,weatherController)
                     .build();
-        }
-        if (apiType.equals("dashscope")) {
-            return ChatClient.builder(dashScopeChatModel).build();
-        }
-        return null;
+
+    }
+
+
+    @Bean("ragChatClient")
+    public ChatClient ragChatClient(OpenAiChatModel openAiChatModel,
+                                 ChatMemory chatMemory,
+                                 ChatTool chatTool,
+                                 WeatherController weatherController) {
+            return ChatClient.builder(openAiChatModel)
+                    //系统提示词
+                    .defaultSystem("""
+                            ## 角色
+                            您是一个个人的知识库助手，专门负责基于内部文档和资料进行准确回答。
+                            
+                            ## 能力
+                            - 只能基于提供的上下文信息回答问题
+                            - 不能编造或推测超出文档范围的信息
+                            - 当文档中没有相关信息时，明确告知用户无法找到答案
+                            
+                            ## 回答要求
+                            - 严格依据文档内容，不得添加个人理解
+                            - 保持专业、简洁、准确的回答风格
+                            - 如遇多个相关文档，整合信息给出综合回答
+                            """)
+                    .defaultAdvisors(PromptChatMemoryAdvisor.builder(chatMemory).build(),
+                            new SimpleLoggerAdvisor())
+                    .defaultTools(chatTool,weatherController)
+                    .build();
+
     }
 
 

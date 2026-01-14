@@ -1,6 +1,9 @@
 server:
   port: 8080
 
+ai:
+  type: openai  # 或 dashscope 根据实际需求选择
+
 spring:
   application:
     name: spring-ai-demo-service
@@ -16,7 +19,17 @@ spring:
       embedding:
         options:
             model: text-embedding-v4
-
+      # Chroma 向量存储配置（本地模式）
+    vectors-tore:
+      chroma:
+        initialize-schema: true  # 自动创建集合
+        collection-name: coffee_collection
+        tenant-name: default_tenant
+        database-name: default_database
+        client:
+          host: http://127.0.0.1
+          port: 8000
+          key-token:
 
   
   # 数据库配置（如果需要存储天气历史数据）
