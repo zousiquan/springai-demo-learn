@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-ai-demo-service
+  ai:
+    openai:
+      api-key: sk-968446903e7f485987ebd682c06acc9c  # 替换为实际API Key
+      base-url: https://dashscope.aliyuncs.com/compatible-mode  # 阿里云兼容模式地址
+      chat:
+        options:
+          model: qwen3-max  # 可选模型：qwen-plus/deepseek-r1
+          temperature: 0.7
+          max-tokens: 2048
+      embedding:
+        options:
+            model: text-embedding-v4
+
+
+  
+  # 数据库配置（如果需要存储天气历史数据）
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://172.18.12.21:3306/agentframework_test
+    username: chatbitest
+    password: chatbitest
+    
+  # MyBatis配置
+  mybatis:
+    mapper-locations: classpath:mapper/*.xml
+    type-aliases-package: org.example.springai.model
+    configuration:
+      map-underscore-to-camel-case: true
+
+# 天气API配置
+weather:
+  api:
+    # OpenWeatherMap API密钥（可选，如果不配置则使用模拟数据）
+    key:
+    # 天气API基础URL
+    url: https://api.openweathermap.org/data/2.5
+    # 请求超时时间（毫秒）
+    timeout: 5000
+
+# 日志配置
+logging:
+  level:
+    org.example.springai: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" 

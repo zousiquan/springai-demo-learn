@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天气查询服务</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+        .weather-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+        .weather-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .weather-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .forecast {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .forecast-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ 天气查询服务</h1>
+        
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="请输入城市名称（如：北京、上海、广州）" value="北京">
+            <button onclick="getCurrentWeather()">查询当前天气</button>
+            <button onclick="getWeatherForecast()">查询天气预报</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function getCurrentWeather() {
+            const city = document.getElementById('cityInput').value.trim();
+            if (!city) {
+                alert('请输入城市名称');
+                return;
+            }
+            
+            showLoading('正在查询当前天气...');
+            
+            try {
+                const response = await fetch(`/api/weather/city/${encodeURIComponent(city)}`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    displayCurrentWeather(result.data);
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('查询失败：' + error.message);
+            }
+        }
+        
+        async function getWeatherForecast() {
+            const city = document.getElementById('cityInput').value.trim();
+            if (!city) {
+                alert('请输入城市名称');
+                return;
+            }
+            
+            showLoading('正在查询天气预报...');
+            
+            try {
+                const response = await fetch(`/api/weather/forecast/${encodeURIComponent(city)}?days=5`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    displayForecast(result.data);
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('查询失败：' + error.message);
+            }
+        }
+        
+        function displayCurrentWeather(weather) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="weather-card">
+                    <h2>${weather.city} - 当前天气</h2>
+                    <div class="weather-info">
+                        <div class="weather-item">
+                            <span>温度：</span>
+                            <span><strong>${weather.temperature.toFixed(1)}°C</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>天气：</span>
+                            <span><strong>${weather.description}</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>湿度：</span>
+                            <span><strong>${weather.humidity}%</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>风速：</span>
+                            <span><strong>${weather.windSpeed.toFixed(1)} m/s</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>风向：</span>
+                            <span><strong>${weather.windDirection}</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>气压：</span>
+                            <span><strong>${weather.pressure.toFixed(0)} hPa</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>能见度：</span>
+                            <span><strong>${weather.visibility.toFixed(1)} km</strong></span>
+                        </div>
+                        <div class="weather-item">
+                            <span>更新时间：</span>
+                            <span><strong>${new Date(weather.updateTime).toLocaleString()}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayForecast(forecast) {
+            const resultDiv = document.getElementById('result');
+            let forecastHtml = `
+                <div class="weather-card">
+                    <h2>${forecast[0].city} - 5天天气预报</h2>
+                    <div class="forecast">
+            `;
+            
+            forecast.forEach((day, index) => {
+                const date = new Date();
+                date.setDate(date.getDate() + index);
+                forecastHtml += `
+                    <div class="forecast-item">
+                        <h3>${date.toLocaleDateString('zh-CN', {month: 'short', day: 'numeric'})}</h3>
+                        <p><strong>${day.temperature.toFixed(1)}°C</strong></p>
+                        <p>${day.description}</p>
+                        <p>湿度: ${day.humidity}%</p>
+                        <p>${day.windDirection}</p>
+                    </div>
+                `;
+            });
+            
+            forecastHtml += `
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = forecastHtml;
+        }
+        
+        function showLoading(message) {
+            document.getElementById('result').innerHTML = `<div class="loading">${message}</div>`;
+        }
+        
+        function showError(message) {
+            document.getElementById('result').innerHTML = `<div class="error">${message}</div>`;
+        }
+        
+        // 回车键查询
+        document.getElementById('cityInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getCurrentWeather();
+            }
+        });
+        
+        // 页面加载时查询北京天气
+        window.onload = function() {
+            getCurrentWeather();
+        };
+    </script>
+</body>
+</html> 

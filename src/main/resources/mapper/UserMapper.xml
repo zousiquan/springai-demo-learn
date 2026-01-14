@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.springai.mapper.UserMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="UserResultMap" type="org.example.springai.model.User">
+        <id column="user_id" property="userId" jdbcType="VARCHAR"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        user_id, username, password, status
+    </sql>
+
+    <!-- 插入用户 -->
+    <insert id="insertUser" parameterType="org.example.springai.model.User">
+        INSERT INTO t_user (
+            user_id, username, password, status
+        ) VALUES (
+            #{userId}, #{username}, #{password}, #{status}
+        )
+    </insert>
+
+    <!-- 根据用户ID删除用户 -->
+    <delete id="deleteUserById" parameterType="string">
+        DELETE FROM t_user WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 更新用户信息 -->
+    <update id="updateUser" parameterType="org.example.springai.model.User">
+        UPDATE t_user
+        <set>
+            <if test="username != null and username != ''">
+                username = #{username},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 根据用户ID查询用户 -->
+    <select id="selectUserById" parameterType="string" resultMap="UserResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectUserByUsername" parameterType="string" resultMap="UserResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE username = #{username}
+    </select>
+
+    <!-- 查询所有用户 -->
+    <select id="selectAllUsers" resultMap="UserResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        ORDER BY user_id
+    </select>
+
+    <!-- 根据状态查询用户 -->
+    <select id="selectUsersByStatus" parameterType="string" resultMap="UserResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM t_user
+        WHERE status = #{status}
+        ORDER BY user_id
+    </select>
+
+</mapper> 

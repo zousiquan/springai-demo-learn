@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SpringAI 聊天页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .chat-container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 24px; }
+        .messages { min-height: 200px; margin-bottom: 16px; }
+        .message { margin-bottom: 12px; }
+        .user { color: #1976d2; font-weight: bold; }
+        .ai { color: #388e3c; font-weight: bold; }
+        .input-row { display: flex; }
+        input[type="text"] { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { margin-left: 8px; padding: 8px 16px; background: #1976d2; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #aaa; }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <h2>SpringAI 聊天</h2>
+    <div class="messages" id="messages"></div>
+    <div class="input-row">
+        <input type="text" id="userInput" placeholder="请输入你的消息..." />
+        <button onclick="sendMessage()" id="sendBtn">发送</button>
+    </div>
+</div>
+<script>
+    const messagesDiv = document.getElementById('messages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function appendMessage(sender, text) {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.innerHTML = `<span class="${sender}">${sender === 'user' ? '你' : 'AI'}：</span> ${text}`;
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+        appendMessage('user', text);
+        userInput.value = '';
+        sendBtn.disabled = true;
+        fetch(`/text?message=${encodeURIComponent(text)}`)
+            .then(res => res.text())
+            .then(data => {
+                appendMessage('ai', data);
+            })
+            .catch(() => {
+                appendMessage('ai', '请求失败，请稍后重试。');
+            })
+            .finally(() => {
+                sendBtn.disabled = false;
+                userInput.focus();
+            });
+    }
+
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+</body>
+</html> 

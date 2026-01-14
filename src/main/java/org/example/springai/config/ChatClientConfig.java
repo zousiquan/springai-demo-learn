@@ -1,0 +1,64 @@
+package org.example.springai.config;
+
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import org.example.springai.controller.WeatherController;
+import org.example.springai.tools.ChatTool;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ChatClientConfig {
+
+//    @Bean
+//    public ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
+//        return chatClientBuilder.build();
+//    }
+
+    @Value("${ai.type}")
+    private String apiType;
+
+    // 业务记忆存储
+    @Bean
+    public ChatMemory chatMemory() {
+        return MessageWindowChatMemory
+                .builder()
+                .maxMessages(20)
+                .build();
+    }
+
+
+    @Bean
+    public ChatClient chatClient(OpenAiChatModel openAiChatModel,
+                                 DashScopeChatModel dashScopeChatModel,
+                                 ChatMemory chatMemory,
+                                 ChatTool chatTool,
+                                 WeatherController weatherController) {
+        if (apiType.equals("openai")) {
+            return ChatClient.builder(openAiChatModel)
+                    //系统提示词
+                    .defaultSystem("""
+                            ##角色
+                            您是观风科技软件公司的客户经理，请以友好的方式来回复。
+                            您正在通过在线聊天系统与客户互动。
+                            今天的日期是 {current_data}
+                            """)
+                    .defaultAdvisors(PromptChatMemoryAdvisor.builder(chatMemory).build(),
+                            new SimpleLoggerAdvisor())
+                    .defaultTools(chatTool,weatherController)
+                    .build();
+        }
+        if (apiType.equals("dashscope")) {
+            return ChatClient.builder(dashScopeChatModel).build();
+        }
+        return null;
+    }
+
+
+}
