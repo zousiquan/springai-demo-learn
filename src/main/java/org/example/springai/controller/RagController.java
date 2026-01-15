@@ -64,6 +64,6 @@ public class RagController {
     // 原有接口：RAG问答
     @GetMapping("/ask")
     public String askQuestion(@RequestParam String question) {
-        return ragService.ragAnswer(question);
+        return ragService.ragAnswerWithAdvisor(question);
     }
 }

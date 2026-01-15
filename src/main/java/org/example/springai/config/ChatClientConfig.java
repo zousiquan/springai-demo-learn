@@ -1,5 +1,6 @@
 package org.example.springai.config;
 
+import io.modelcontextprotocol.client.McpSyncClient;
 import org.example.springai.controller.WeatherController;
 import org.example.springai.tools.ChatTool;
 import org.springframework.ai.chat.client.ChatClient;
@@ -7,10 +8,13 @@ import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class ChatClientConfig {
@@ -82,5 +86,19 @@ public class ChatClientConfig {
 
     }
 
+
+    @Bean("mcpChatClient")
+    public ChatClient mcpChatClient(OpenAiChatModel openAiChatModel,
+                                    ChatMemory chatMemory,
+                                    McpSyncClient mcpSyncClient
+                                    ) {
+        ChatClient.Builder builder = ChatClient.builder(openAiChatModel).defaultAdvisors(PromptChatMemoryAdvisor.builder(chatMemory).build(),
+                new SimpleLoggerAdvisor());
+        if(mcpSyncClient != null){
+            builder.defaultToolCallbacks(SyncMcpToolCallbackProvider.syncToolCallbacks(List.of(mcpSyncClient)));
+        }
+        return builder.build();
+
+    }
 
 }

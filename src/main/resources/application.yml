@@ -30,6 +30,11 @@ spring:
           host: http://127.0.0.1
           port: 8000
           key-token:
+    #mcp
+#    mcp:
+#      client:
+#        stdio:
+#          servers-configuration: mcp-servers-config-windows.json
 
   
   # 数据库配置（如果需要存储天气历史数据）
@@ -61,6 +66,6 @@ weather:
 logging:
   level:
     org.example.springai: DEBUG
-    org.springframework.web: INFO
+    org.springframework.web: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" 

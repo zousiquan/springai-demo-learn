@@ -1,6 +1,8 @@
 package org.example.springai.service;
 
+import org.example.springai.advisor.CustomAnswerAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -20,13 +22,15 @@ public class RagService {
     private final EmbeddingModel embeddingModel;
     private final OpenAiChatModel chatModel;
     private final ChatClient ragChatClient;
+    private final ChatClient mcpChatClient;
 
     @Autowired
-    public RagService(VectorStore vectorStore, EmbeddingModel embeddingModel, OpenAiChatModel chatModel,ChatClient ragChatClient) {
+    public RagService(VectorStore vectorStore, EmbeddingModel embeddingModel, OpenAiChatModel chatModel,ChatClient ragChatClient,ChatClient mcpChatClient) {
         this.vectorStore = vectorStore;
         this.embeddingModel = embeddingModel;
         this.chatModel = chatModel;
         this.ragChatClient = ragChatClient;
+        this.mcpChatClient = mcpChatClient;
     }
 
     // 原有方法：加载文本内容入库
@@ -74,4 +78,22 @@ public class RagService {
         );
         return ragChatClient.prompt().user( prompt).call().content();
     }
+
+    public String ragAnswerWithAdvisor(String userQuestion) {
+        if(userQuestion.contains("文件")){
+           return mcpChatClient.prompt()
+                .user(userQuestion)
+                .call()
+                .content();
+        }
+        return ChatClient.builder(chatModel)
+                .build().prompt()
+                .advisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+                .advisors(new CustomAnswerAdvisor())
+                .user(userQuestion)
+                .call()
+                .content();
+    }
+
+
 }

@@ -10,6 +10,7 @@
         .message { margin-bottom: 12px; }
         .user { color: #1976d2; font-weight: bold; }
         .ai { color: #388e3c; font-weight: bold; }
+        .system { color: #388e3c; font-weight: bold; }
         .input-row { display: flex; }
         input[type="text"] { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         button { margin-left: 8px; padding: 8px 16px; background: #1976d2; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
@@ -71,7 +72,24 @@
     function appendMessage(sender, text) {
         const msg = document.createElement('div');
         msg.className = 'message';
-        msg.innerHTML = `<span class="${sender}">${sender === 'user' ? '你' : 'AI'}：</span> ${text}`;
+
+        // 根据发送者类型显示不同的标签
+        let senderLabel;
+        switch(sender) {
+            case 'user':
+                senderLabel = '你';
+                break;
+            case 'ai':
+                senderLabel = 'AI';
+                break;
+            case 'system':
+                senderLabel = '系统提示';
+                break;
+            default:
+                senderLabel = sender;
+        }
+
+        msg.innerHTML = `<span class="${sender}">${senderLabel}：</span> ${text}`;
         messagesDiv.appendChild(msg);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
@@ -114,13 +132,12 @@
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
-            .then(data => {
+            .then(response => {
                 hideUploadProgress();
-                if (data.success) {
-                    appendMessage('system', `成功上传 ${data.count} 个文件到知识库`);
+                if (response.status === 200) {
+                    appendMessage('system', `成功上传文件到知识库`);
                 } else {
-                    appendMessage('system', `上传失败: ${data.message}`);
+                    appendMessage('system', `上传失败`);
                 }
             })
             .catch(error => {
