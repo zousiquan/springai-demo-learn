@@ -119,52 +119,58 @@
             padding: 10px;
         }
 
+        /* 优化后的知识库卡片样式 */
         .kb-item {
-            padding: 12px;
-            margin-bottom: 8px;
-            background: #f5f5f5;
-            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #ffffff;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 2px solid transparent;
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .kb-item:hover {
-            background: #e3e3e3;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #f8f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
         }
 
         .kb-item.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: #5568d3;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .kb-name {
             font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
+            font-size: 15px;
+            margin-bottom: 6px;
         }
 
         .kb-description {
             font-size: 12px;
             opacity: 0.8;
+            margin-bottom: 10px;
         }
 
         .kb-actions {
-            margin-top: 8px;
             display: flex;
             gap: 8px;
+            align-items: center;
         }
 
         .btn-small {
-            padding: 4px 8px;
+            padding: 6px 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-weight: 500;
         }
 
         .btn-small.edit {
@@ -177,39 +183,179 @@
             color: white;
         }
 
+        .btn-small.upload {
+            background: rgba(76, 175, 80, 0.2);
+            color: white;
+        }
+
         .btn-small:hover {
-            opacity: 0.8;
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
-        .upload-section {
-            padding: 15px;
-            border-top: 1px solid #e0e0e0;
+        /* 未激活状态的按钮样式 */
+        .kb-item:not(.active) .btn-small {
+            background: #f0f0f0;
+            color: #666;
         }
 
-        .upload-section h4 {
-            font-size: 14px;
-            margin-bottom: 10px;
+        .kb-item:not(.active) .btn-small:hover {
+            background: #e0e0e0;
             color: #333;
         }
 
-        .file-upload-area {
+        /* 上传文件弹出框样式 */
+        .upload-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .upload-modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .upload-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .upload-modal-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .upload-modal-body {
+            margin-bottom: 20px;
+        }
+
+        .file-select-area {
             border: 2px dashed #667eea;
             border-radius: 8px;
             padding: 20px;
             text-align: center;
-            background: #f0f4ff;
+            background: #f8f9ff;
+            margin-bottom: 20px;
             transition: all 0.3s ease;
         }
 
-        .file-upload-area:hover {
+        .file-select-area:hover {
             border-color: #5568d3;
-            background: #e0e7ff;
+            background: #eef2ff;
         }
 
-        .file-upload-area p {
-            font-size: 12px;
+        .file-select-area p {
+            font-size: 14px;
             color: #666;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .selected-files {
+            margin-top: 15px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .file-size {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .remove-file {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff4444;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-file:hover {
+            background: rgba(255, 0, 0, 0.2);
+        }
+
+        .upload-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
         }
 
         .btn-primary {
@@ -234,6 +380,24 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .upload-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
         }
 
         /* 聊天主面板 */
@@ -490,19 +654,31 @@
                 </div>
             </div>
             
-            <div class="upload-section" id="uploadSection" style="display: none;">
-                <h4>上传文件到当前知识库</h4>
-                <div class="file-upload-area">
-                    <p>支持上传 PDF, DOC, DOCX, TXT 等格式文件</p>
-                    <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.txt" multiple style="display: none;">
-                    <button class="btn-primary" onclick="document.getElementById('fileUpload').click()">
-                        选择文件
-                    </button>
-                    <div class="upload-progress" id="uploadProgress">
-                        <div class="upload-bar" id="uploadBar"></div>
+            <!-- 上传文件弹出框 -->
+            <div class="upload-modal" id="uploadModal">
+                <div class="upload-modal-content">
+                    <div class="upload-modal-header">
+                        <h3>上传文件到知识库</h3>
+                        <button class="close-modal" onclick="closeUploadModal()">&times;</button>
                     </div>
-                    <div style="margin-top: 10px;">
-                        <button class="btn-primary" onclick="uploadFile()">开始上传</button>
+                    <div class="upload-modal-body">
+                        <div class="file-select-area">
+                            <p>支持上传 PDF, DOC, DOCX, TXT 等格式文件</p>
+                            <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.txt" multiple style="display: none;" onchange="handleFileSelect(event)">
+                            <button class="btn-primary" onclick="document.getElementById('fileUpload').click()">
+                                选择文件
+                            </button>
+                            <div class="selected-files" id="selectedFiles"></div>
+                        </div>
+                        <div class="upload-progress" id="uploadProgress">
+                            <div class="upload-bar" id="uploadBar"></div>
+                        </div>
+                    </div>
+                    <div class="upload-modal-footer">
+                        <button class="btn-secondary" onclick="closeUploadModal()">取消</button>
+                        <button class="btn-primary" onclick="uploadFile()" id="startUploadBtn" disabled>
+                            开始上传
+                        </button>
                     </div>
                 </div>
             </div>
@@ -538,19 +714,25 @@
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const ragToggle = document.getElementById('ragToggle');
-        const uploadSection = document.getElementById('uploadSection');
         const fileUpload = document.getElementById('fileUpload');
         const uploadProgress = document.getElementById('uploadProgress');
         const uploadBar = document.getElementById('uploadBar');
         const kbList = document.getElementById('kbList');
+        const uploadModal = document.getElementById('uploadModal');
+        const selectedFiles = document.getElementById('selectedFiles');
+        const startUploadBtn = document.getElementById('startUploadBtn');
         
-        let currentKnowledgeBase = 'default';
+        let currentKnowledgeBase = 'coffee_collection';
         let knowledgeBases = {
-            'default': { name: '默认知识库', description: '系统默认知识库' }
+            'coffee_collection': { name: '默认知识库', description: '系统默认知识库' }
         };
+        let selectedFilesList = [];
         
         // 初始化消息区域
         appendMessage('system', '欢迎使用智能聊天助手！你可以开始提问了。');
+        
+        // 加载知识库列表
+        loadKnowledgeBases();
         
         function appendMessage(sender, text) {
             const msgDiv = document.createElement('div');
@@ -591,7 +773,6 @@
         
         function toggleRagMode() {
             const isChecked = ragToggle.checked;
-            uploadSection.style.display = isChecked ? 'block' : 'none';
             
             if (isChecked) {
                 appendMessage('system', '知识库模式已开启，你可以上传文件到当前选中的知识库。');
@@ -635,10 +816,25 @@
             }
             
             if (confirm('确定要删除这个知识库吗？')) {
-                delete knowledgeBases[kbId];
-                renderKnowledgeBases();
-                selectKnowledgeBase('default');
-                appendMessage('system', '已删除选定的知识库');
+                // 调用后端API删除知识库
+                fetch(`/rag/knowledge-bases/${kbId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        delete knowledgeBases[kbId];
+                        renderKnowledgeBases();
+                        selectKnowledgeBase('coffee_collection');
+                        appendMessage('system', data.message);
+                    } else {
+                        appendMessage('system', '删除知识库失败：' + data.message);
+                    }
+                })
+                .catch(error => {
+                    appendMessage('system', '删除知识库失败：' + error.message);
+                    console.error('Delete knowledge base error:', error);
+                });
             }
         }
         
@@ -670,6 +866,7 @@
                     <div class="kb-name">${kb.name}</div>
                     <div class="kb-description">${kb.description}</div>
                     <div class="kb-actions">
+                        <button class="btn-small upload" onclick="event.stopPropagation(); openUploadModal('${kbId}')">上传</button>
                         <button class="btn-small edit" onclick="event.stopPropagation(); editKnowledgeBase('${kbId}')">编辑</button>
                         <button class="btn-small delete" onclick="event.stopPropagation(); deleteKnowledgeBase('${kbId}')">删除</button>
                     </div>
@@ -679,18 +876,106 @@
             });
         }
         
+        // 加载知识库列表
+        function loadKnowledgeBases() {
+            fetch('/rag/knowledge-bases')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        knowledgeBases = {};
+                        data.data.forEach(kb => {
+                            knowledgeBases[kb.id] = {
+                                name: kb.name,
+                                description: kb.description
+                            };
+                        });
+                        renderKnowledgeBases();
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load knowledge bases:', error);
+                });
+        }
+        
+        // 打开上传文件模态框
+        function openUploadModal(kbId) {
+            if (kbId) {
+                currentKnowledgeBase = kbId;
+                selectKnowledgeBase(kbId);
+            }
+            selectedFilesList = [];
+            selectedFiles.innerHTML = '';
+            startUploadBtn.disabled = true;
+            uploadModal.style.display = 'block';
+        }
+        
+        // 关闭上传文件模态框
+        function closeUploadModal() {
+            uploadModal.style.display = 'none';
+            fileUpload.value = '';
+            selectedFilesList = [];
+            selectedFiles.innerHTML = '';
+            startUploadBtn.disabled = true;
+        }
+        
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            selectedFilesList = Array.from(files);
+            
+            // 渲染选中的文件列表
+            renderSelectedFiles();
+            
+            // 启用上传按钮
+            startUploadBtn.disabled = selectedFilesList.length === 0;
+        }
+        
+        // 渲染选中的文件列表
+        function renderSelectedFiles() {
+            selectedFiles.innerHTML = '';
+            
+            selectedFilesList.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                    <button class="remove-file" onclick="removeFile(${index})">移除</button>
+                `;
+                
+                selectedFiles.appendChild(fileItem);
+            });
+        }
+        
+        // 移除选中的文件
+        function removeFile(index) {
+            selectedFilesList.splice(index, 1);
+            renderSelectedFiles();
+            startUploadBtn.disabled = selectedFilesList.length === 0;
+        }
+        
         function uploadFile() {
-            const files = fileUpload.files;
-            if (files.length === 0) {
+            if (selectedFilesList.length === 0) {
                 alert('请选择要上传的文件');
                 return;
             }
             
-            const formData = new FormData();
-            for (let i = 0; i < files.length; i++) {
-                formData.append('file', files[i]);
+            // 显示选择的文件信息
+            let fileInfo = '已选择文件：\n';
+            for (let i = 0; i < selectedFilesList.length; i++) {
+                fileInfo += `${selectedFilesList[i].name} (${(selectedFilesList[i].size / 1024 / 1024).toFixed(2)} MB)\n`;
             }
-            formData.append('knowledgeBaseId', currentKnowledgeBase);
+            appendMessage('system', fileInfo);
+            
+            const formData = new FormData();
+            selectedFilesList.forEach(file => {
+                formData.append('file', file);
+            });
+            formData.append('tag', '通用文档');
+            formData.append('collectionName', currentKnowledgeBase);
             
             showUploadProgress();
             
@@ -698,13 +983,11 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
+            .then(response => response.text())
+            .then(result => {
                 hideUploadProgress();
-                if (response.status === 200) {
-                    appendMessage('system', `成功上传 ${files.length} 个文件到知识库：${knowledgeBases[currentKnowledgeBase].name}`);
-                } else {
-                    appendMessage('system', `上传失败`);
-                }
+                appendMessage('system', result);
+                closeUploadModal();
             })
             .catch(error => {
                 hideUploadProgress();
@@ -723,7 +1006,7 @@
             
             // 根据是否启用知识库模式选择不同的API
             const apiUrl = ragToggle.checked 
-                ? `/rag/ask?question=${encodeURIComponent(text)}&knowledgeBaseId=${currentKnowledgeBase}` 
+                ? `/rag/ask?question=${encodeURIComponent(text)}&collectionName=${currentKnowledgeBase}` 
                 : `/text?message=${encodeURIComponent(text)}`;
             
             fetch(apiUrl)
@@ -764,6 +1047,13 @@
             setTimeout(() => {
                 progress.style.display = 'none';
             }, 500);
+        }
+        
+        // 点击模态框外部关闭模态框
+        window.onclick = function(event) {
+            if (event.target === uploadModal) {
+                closeUploadModal();
+            }
         }
         
         // 初始化

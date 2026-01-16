@@ -20,7 +20,7 @@ spring:
         options:
             model: text-embedding-v4
       # Chroma 向量存储配置（本地模式）
-    vectors-tore:
+    vector-store:
       chroma:
         initialize-schema: true  # 自动创建集合
         collection-name: coffee_collection
