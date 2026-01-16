@@ -1,10 +1,10 @@
 package org.example.springai.service;
 
 import org.example.springai.advisor.CustomAnswerAdvisor;
+import org.example.springai.config.ChromaVectorStoreFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chroma.vectorstore.ChromaApi;
-import org.springframework.ai.chroma.vectorstore.ChromaVectorStore;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -22,13 +22,14 @@ import java.util.Map;
 
 @Service
 public class RagService {
-    private final ChromaVectorStore chromaVectorStore;
     private final ChromaApi chromaApi;
     private final EmbeddingModel embeddingModel;
     private final OpenAiChatModel chatModel;
     private final ChatClient ragChatClient;
     private final ChatClient mcpChatClient;
-    
+    private final ChromaVectorStoreFactory chromaVectorStoreFactory;
+
+
     @Value("${spring.ai.vector-store.chroma.collection-name:coffee_collection}")
     private String defaultCollectionName;
     @Value("${spring.ai.vector-store.chroma.tenant-name:default_tenant}")
@@ -39,8 +40,8 @@ public class RagService {
 
 
     @Autowired
-    public RagService(ChromaVectorStore chromaVectorStore, ChromaApi chromaApi, EmbeddingModel embeddingModel, OpenAiChatModel chatModel,ChatClient ragChatClient,ChatClient mcpChatClient) {
-        this.chromaVectorStore = chromaVectorStore;
+    public RagService(ChromaVectorStoreFactory chromaVectorStoreFactory, ChromaApi chromaApi, EmbeddingModel embeddingModel, OpenAiChatModel chatModel,ChatClient ragChatClient,ChatClient mcpChatClient) {
+        this.chromaVectorStoreFactory = chromaVectorStoreFactory;
         this.chromaApi = chromaApi;
         this.embeddingModel = embeddingModel;
         this.chatModel = chatModel;
@@ -93,7 +94,7 @@ public class RagService {
         updatedMetadata.put("collectionName", collectionName);
         
         Document document = new Document(content, updatedMetadata);
-        chromaVectorStore.add(List.of(document));
+        chromaVectorStoreFactory.getChromaVectorStore(collectionName).add(List.of(document));
     }
 
     // 新增方法：解析本地文件（PDF/Word等）并入库，增加collectionName参数
@@ -117,13 +118,13 @@ public class RagService {
                 })
                 .toList();
         // 4. 存入向量库（自动向量化）
-        chromaVectorStore.add(updatedDocuments);
+        chromaVectorStoreFactory.getChromaVectorStore(collectionName).add(updatedDocuments);
     }
 
     // 原有RAG问答方法，增加collectionName参数
     public String ragAnswer(String userQuestion, String collectionName) {
         // 在查询时添加collectionName过滤条件
-        List<Document> allDocs = chromaVectorStore.similaritySearch(userQuestion);
+        List<Document> allDocs = chromaVectorStoreFactory.getChromaVectorStore(collectionName).similaritySearch(userQuestion);
         List<Document> relevantDocs = allDocs.stream()
                 .filter(doc -> collectionName.equals(doc.getMetadata().get("collectionName")))
                 .toList();
@@ -153,11 +154,21 @@ public class RagService {
         }
         return ChatClient.builder(chatModel)
                 .build().prompt()
-                .advisors(QuestionAnswerAdvisor.builder(chromaVectorStore).build())
+                .advisors(QuestionAnswerAdvisor.builder(chromaVectorStoreFactory.getChromaVectorStore(collectionName))
+                        .build())
                 .advisors(new CustomAnswerAdvisor())
                 .user(userQuestion)
                 .call()
                 .content();
+    }
+    
+    // 创建知识库
+    public void createKnowledgeBase(String collectionName, String description) {
+        // 准备metadata
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("description", description);
+        // 使用ChromaApi创建新的collection
+        chromaApi.createCollection(defaultTenantName, defaultDatabaseName, new ChromaApi.CreateCollectionRequest(collectionName, metadata));
     }
     
     // 删除知识库

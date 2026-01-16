@@ -32,6 +32,28 @@ public class RagController {
                 "total", ragService.getKnowledgeBaseList().size()
         );
     }
+    
+    // 新增接口：创建知识库
+    @PostMapping("/knowledge-bases")
+    public Object createKnowledgeBase(@RequestBody Map<String, String> request) {
+        try {
+            String collectionName = request.get("name");
+            String description = request.get("description");
+            
+            ragService.createKnowledgeBase(collectionName, description);
+            
+            return Map.of(
+                    "success", true,
+                    "message", "知识库创建成功"
+            );
+        } catch (Exception e) {
+            log.error("创建知识库失败：", e);
+            return Map.of(
+                    "success", false,
+                    "message", "创建知识库失败：" + e.getMessage()
+            );
+        }
+    }
 
     // 原有接口：添加文本内容，增加知识库参数
     @PostMapping("/add-doc")
