@@ -145,19 +145,23 @@ public class RagService {
         return ragChatClient.prompt().user( prompt).call().content();
     }
 
-    public String ragAnswerWithAdvisor(String userQuestion, String collectionName) {
+    public String ragAnswerWithAdvisor(String userQuestion, String collectionName, String conversationId) {
         if(userQuestion.contains("文件")){
            return mcpChatClient.prompt()
                 .user(userQuestion)
+                .system(p -> p.param("chat_memory_conversation_id", conversationId))
                 .call()
                 .content();
         }
-        return ChatClient.builder(chatModel)
-                .build().prompt()
+
+        return ragChatClient
+                .prompt()
                 .advisors(QuestionAnswerAdvisor.builder(chromaVectorStoreFactory.getChromaVectorStore(collectionName))
                         .build())
                 .advisors(new CustomAnswerAdvisor())
-                .user(userQuestion)
+                .user( u -> {
+                    u.text(userQuestion).metadata("chat_memory_conversation_id", conversationId);
+                })
                 .call()
                 .content();
     }

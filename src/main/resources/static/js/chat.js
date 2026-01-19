@@ -10,11 +10,55 @@ const uploadModal = document.getElementById('uploadModal');
 const selectedFiles = document.getElementById('selectedFiles');
 const startUploadBtn = document.getElementById('startUploadBtn');
 
+// 用于存储当前正在处理的流式请求，以便支持中断功能
+let currentStreamingRequest = null;
+
+// 消息计数器，用于唯一标识每条消息
+let messageCounter = 0;
+
 let currentKnowledgeBase = 'coffee_collection';
 let knowledgeBases = {
     'coffee_collection': { name: '默认知识库', description: '系统默认知识库' }
 };
 let selectedFilesList = [];
+
+// 会话ID管理
+let conversationId = null;
+
+// 初始化会话ID
+function initConversationId() {
+    // 检查本地存储中是否已有会话ID
+    conversationId = localStorage.getItem('conversationId');
+    if (!conversationId) {
+        // 生成新的会话ID
+        conversationId = generateConversationId();
+        // 保存到本地存储
+        localStorage.setItem('conversationId', conversationId);
+    }
+}
+
+// 生成会话ID
+function generateConversationId() {
+    // 生成格式：时间戳_随机数
+    return `${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+}
+
+// 新建会话
+function newConversation() {
+    // 清空聊天记录
+    messagesDiv.innerHTML = '';
+    // 生成新的会话ID
+    conversationId = generateConversationId();
+    // 保存到本地存储
+    localStorage.setItem('conversationId', conversationId);
+    // 添加系统欢迎消息
+    appendMessage('system', '欢迎使用智能聊天助手！你可以开始提问了。');
+    // 聚焦到输入框
+    userInput.focus();
+}
+
+// 初始化会话ID
+initConversationId();
 
 // 初始化消息区域
 appendMessage('system', '欢迎使用智能聊天助手！你可以开始提问了。');
@@ -22,9 +66,20 @@ appendMessage('system', '欢迎使用智能聊天助手！你可以开始提问�
 // 加载知识库列表
 loadKnowledgeBases();
 
-function appendMessage(sender, text) {
+/**
+ * 添加消息到聊天界面
+ * @param {string} sender 发送者（user, ai, system）
+ * @param {string} text 消息内容
+ * @param {boolean} isStreaming 是否为流式消息
+ * @returns {Object} 消息元素对象，用于流式更新
+ */
+function appendMessage(sender, text, isStreaming = false) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${sender}`;
+    
+    // 生成唯一的消息ID
+    const messageId = `msg_${Date.now()}_${messageCounter++}`;
+    msgDiv.setAttribute('id', messageId);
     
     let bubbleContent = '';
     let senderLabel = '';
@@ -33,23 +88,168 @@ function appendMessage(sender, text) {
         case 'user':
             senderLabel = '你';
             bubbleContent = `<div class="message-sender">${senderLabel}</div>${text}`;
+            msgDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
             break;
         case 'ai':
             senderLabel = 'AI';
-            bubbleContent = `<div class="message-sender">${senderLabel}</div>${text}`;
+            if (isStreaming) {
+                // 流式消息，添加等待动效和中断按钮
+                bubbleContent = `
+                    <div class="message-sender">${senderLabel}</div>
+                    <div class="message-content">${text}</div>
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="message-actions">
+                        <button class="btn-small interrupt" onclick="interruptStream('${messageId}')">中断</button>
+                    </div>
+                `;
+            } else {
+                // 完整消息，添加复制和重新生成按钮
+                bubbleContent = `
+                    <div class="message-sender">${senderLabel}</div>
+                    <div class="message-content">${text}</div>
+                    <div class="message-actions">
+                        <button class="btn-small copy" onclick="copyMessage('${messageId}')">复制</button>
+                        <button class="btn-small regenerate" onclick="regenerateMessage('${messageId}')">重新生成</button>
+                    </div>
+                `;
+            }
+            msgDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
             break;
         case 'system':
             senderLabel = '系统提示';
             bubbleContent = text;
+            msgDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
             break;
         default:
             senderLabel = sender;
             bubbleContent = `<div class="message-sender">${senderLabel}</div>${text}`;
+            msgDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
     }
     
-    msgDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
     messagesDiv.appendChild(msgDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    return {
+        element: msgDiv,
+        messageId: messageId
+    };
+}
+
+/**
+ * 更新流式消息内容
+ * @param {string} messageId 消息ID
+ * @param {string} newContent 新的消息内容
+ * @param {boolean} isComplete 是否完成
+ */
+function updateStreamingMessage(messageId, newContent, isComplete = false) {
+    const msgDiv = document.getElementById(messageId);
+    if (!msgDiv) return;
+    
+    const contentDiv = msgDiv.querySelector('.message-content');
+    const typingIndicator = msgDiv.querySelector('.typing-indicator');
+    const actionsDiv = msgDiv.querySelector('.message-actions');
+    
+    if (contentDiv) {
+        contentDiv.textContent = newContent;
+    }
+    
+    if (isComplete) {
+        // 消息完成，移除打字指示器和中断按钮，添加复制和重新生成按钮
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+        
+        if (actionsDiv) {
+            actionsDiv.innerHTML = `
+                <button class="btn-small copy" onclick="copyMessage('${messageId}')">复制</button>
+                <button class="btn-small regenerate" onclick="regenerateMessage('${messageId}')">重新生成</button>
+            `;
+        }
+    }
+    
+    // 滚动到底部
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+/**
+ * 中断当前流式请求
+ * @param {string} messageId 消息ID
+ */
+function interruptStream(messageId) {
+    if (currentStreamingRequest) {
+        // 取消当前的fetch请求
+        currentStreamingRequest.cancel();
+        currentStreamingRequest = null;
+        
+        // 更新消息状态
+        updateStreamingMessage(messageId, document.getElementById(messageId).querySelector('.message-content').textContent, true);
+        
+        // 恢复发送按钮
+        sendBtn.disabled = false;
+        userInput.focus();
+    }
+}
+
+/**
+ * 复制消息内容到剪贴板
+ * @param {string} messageId 消息ID
+ */
+function copyMessage(messageId) {
+    const msgDiv = document.getElementById(messageId);
+    const contentDiv = msgDiv.querySelector('.message-content');
+    if (contentDiv) {
+        navigator.clipboard.writeText(contentDiv.textContent)
+            .then(() => {
+                // 显示复制成功提示
+                const originalText = contentDiv.textContent;
+                contentDiv.textContent = '已复制到剪贴板！';
+                setTimeout(() => {
+                    contentDiv.textContent = originalText;
+                }, 1500);
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+            });
+    }
+}
+
+/**
+ * 重新生成消息
+ * @param {string} messageId 消息ID
+ */
+function regenerateMessage(messageId) {
+    const msgDiv = document.getElementById(messageId);
+    // 找到对应的用户消息
+    const userMessages = messagesDiv.querySelectorAll('.message.user');
+    let userMessage = null;
+    let currentIndex = Array.from(messagesDiv.children).indexOf(msgDiv);
+    
+    // 向上查找最近的用户消息
+    for (let i = currentIndex - 1; i >= 0; i--) {
+        const msg = messagesDiv.children[i];
+        if (msg.classList.contains('user')) {
+            userMessage = msg;
+            break;
+        }
+    }
+    
+    if (userMessage) {
+        // 获取用户消息内容
+        const userContent = userMessage.querySelector('.message-content') || userMessage.querySelector('.message-bubble');
+        const userText = userContent.textContent.replace('你：', '').trim();
+        
+        // 删除当前AI消息和之后的所有消息
+        while (messagesDiv.lastChild !== userMessage) {
+            messagesDiv.removeChild(messagesDiv.lastChild);
+        }
+        
+        // 重新发送消息
+        sendMessage();
+    }
 }
 
 function handleKeyDown(event) {
@@ -316,31 +516,127 @@ function uploadFile() {
     });
 }
 
+/**
+ * 发送消息并处理流式响应
+ */
 function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
     
+    // 添加用户消息
     appendMessage('user', text);
     userInput.value = '';
-    sendBtn.disabled = true;
     
-    // 根据是否启用知识库模式选择不同的API
+    // 将发送按钮切换为中断状态
+    sendBtn.classList.add('interrupt');
+    sendBtn.innerHTML = `<span class="send-icon">→</span><span class="interrupt-icon">×</span>`;
+    
+    // 修改按钮的点击事件为中断功能
+    sendBtn.onclick = function() {
+        interruptStream(messageId);
+    };
+    
+    // 添加初始的AI流式消息，带有等待动效
+    const aiMessage = appendMessage('ai', '', true);
+    const messageId = aiMessage.messageId;
+    
+    // 根据是否启用知识库模式选择不同的API，并添加会话ID参数
     const apiUrl = ragToggle.checked 
-        ? `/rag/ask?question=${encodeURIComponent(text)}&collectionName=${currentKnowledgeBase}` 
-        : `/text?message=${encodeURIComponent(text)}`;
+        ? `/rag/ask?question=${encodeURIComponent(text)}&collectionName=${currentKnowledgeBase}&conversationId=${conversationId}` 
+        : `/text?message=${encodeURIComponent(text)}&conversationId=${conversationId}`;
     
-    fetch(apiUrl)
-        .then(res => res.text())
-        .then(data => {
-            appendMessage('ai', data);
-        })
-        .catch(() => {
-            appendMessage('ai', '请求失败，请稍后重试。');
-        })
-        .finally(() => {
-            sendBtn.disabled = false;
-            userInput.focus();
+    // 模拟流式输出的内容
+    let simulatedResponse = "";
+    
+    // 创建一个AbortController，用于支持中断功能
+    const controller = new AbortController();
+    const { signal } = controller;
+    currentStreamingRequest = {
+        cancel: () => controller.abort(),
+        messageId: messageId
+    };
+    
+    // 使用fetch API发送请求
+    fetch(apiUrl, {
+        signal: signal
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return res.text();
+    })
+    .then(data => {
+        // 模拟流式输出
+        simulatedResponse = data;
+        let index = 0;
+        
+        // 每次输出多个字符，模拟更自然的打字效果
+        const typingInterval = setInterval(() => {
+            if (index < simulatedResponse.length) {
+                // 随机输出1-4个字符，使打字效果更自然
+                const charsToAdd = Math.min(Math.floor(Math.random() * 4) + 1, simulatedResponse.length - index);
+                const newContent = simulatedResponse.substring(0, index + charsToAdd);
+                updateStreamingMessage(messageId, newContent);
+                index += charsToAdd;
+            } else {
+                // 完成流式输出
+                clearInterval(typingInterval);
+                updateStreamingMessage(messageId, simulatedResponse, true);
+                resetSendButton();
+            }
+        }, 50); // 每50毫秒显示一批字符
+        
+        return new Promise(resolve => {
+            // 确保在流式输出完成后resolve
+            setTimeout(() => resolve(), simulatedResponse.length * 50 + 100);
         });
+    })
+    .catch(error => {
+        if (error.name === 'AbortError') {
+            // 请求被中断，不显示错误信息
+            console.log('Request aborted');
+        } else {
+            // 其他错误，显示错误信息
+            updateStreamingMessage(messageId, '请求失败，请稍后重试。', true);
+            console.error('Error:', error);
+        }
+        resetSendButton();
+    });
+}
+
+/**
+ * 重置发送按钮为初始状态
+ */
+function resetSendButton() {
+    // 恢复发送按钮的初始状态
+    sendBtn.classList.remove('interrupt');
+    sendBtn.innerHTML = `<span class="send-icon">→</span><span class="interrupt-icon">×</span>`;
+    
+    // 恢复按钮的点击事件为发送功能
+    sendBtn.onclick = sendMessage;
+    sendBtn.disabled = false;
+    userInput.focus();
+    
+    // 清除当前流式请求
+    currentStreamingRequest = null;
+}
+
+/**
+ * 中断当前流式请求
+ * @param {string} messageId 消息ID
+ */
+function interruptStream(messageId) {
+    if (currentStreamingRequest) {
+        // 取消当前的fetch请求
+        currentStreamingRequest.cancel();
+        
+        // 更新消息状态
+        updateStreamingMessage(messageId, document.getElementById(messageId).querySelector('.message-content').textContent, true);
+        
+        // 重置发送按钮
+        resetSendButton();
+    }
 }
 
 function showUploadProgress() {

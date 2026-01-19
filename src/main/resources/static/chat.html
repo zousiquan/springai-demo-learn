@@ -45,7 +45,12 @@
         <!-- 聊天主面板 -->
         <div class="chat-panel">
             <div class="chat-header">
-                <h2>智能聊天助手</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>智能聊天助手</h2>
+                    <button class="btn-small new-conversation" onclick="newConversation()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px;">
+                        新建会话
+                    </button>
+                </div>
             </div>
             
             <div class="messages" id="messages"></div>
@@ -58,10 +63,11 @@
                             placeholder="请输入你的消息..." 
                             onkeydown="handleKeyDown(event)"
                         ></textarea>
+                        <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                            <span class="send-icon">→</span>
+                            <span class="interrupt-icon">×</span>
+                        </button>
                     </div>
-                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">
-                        →
-                    </button>
                 </div>
             </div>
         </div>

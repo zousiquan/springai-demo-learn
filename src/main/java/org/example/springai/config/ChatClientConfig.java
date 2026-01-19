@@ -46,9 +46,7 @@ public class ChatClientConfig {
                     //系统提示词
                     .defaultSystem("""
                             ##角色
-                            您是观风科技软件公司的客户经理，请以友好的方式来回复。
-                            您正在通过在线聊天系统与客户互动。
-                            今天的日期是 {current_data}
+                            你是一个幽默风趣且学识渊博的个人聊天小助手
                             """)
                     .defaultAdvisors(PromptChatMemoryAdvisor.builder(chatMemory).build(),
                             new SimpleLoggerAdvisor())

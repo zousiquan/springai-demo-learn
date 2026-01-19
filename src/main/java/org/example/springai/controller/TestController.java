@@ -30,10 +30,17 @@ public class TestController {
     }
 
     @RequestMapping("/text")
-    public String index(@RequestParam(value = "message", defaultValue = "讲个笑话") String message) {
+    public String index(@RequestParam(value = "message", defaultValue = "讲个笑话") String message,
+                       @RequestParam(value = "conversationId", defaultValue = "") String conversationId) {
+        // 可以将conversationId用于会话管理，如会话历史存储、上下文维护等
+        System.out.println("Received conversationId: " + conversationId);
+        
         return chatClient.prompt()
                 .user(message + "/no_think")
-                .system(p->p.param("current_data", LocalDateTime.now().toString()))
+                .system(p->{
+                    p.param("current_data", LocalDateTime.now().toString());
+                    p.param("chat_memory_conversation_id", conversationId);
+                })
                 .call()
                 .content();
     }

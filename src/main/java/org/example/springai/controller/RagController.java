@@ -97,11 +97,14 @@ public class RagController {
         }
     }
 
-    // 原有接口：RAG问答，增加知识库参数
+    // 原有接口：RAG问答，增加知识库参数和会话ID
     @GetMapping("/ask")
     public String askQuestion(@RequestParam String question, 
-                            @RequestParam(value = "collectionName", defaultValue = "coffee_collection") String collectionName) {
-        return ragService.ragAnswerWithAdvisor(question, collectionName);
+                            @RequestParam(value = "collectionName", defaultValue = "coffee_collection") String collectionName,
+                            @RequestParam(value = "conversationId", defaultValue = "") String conversationId) {
+        // 可以将conversationId用于会话管理，如会话历史存储、上下文维护等
+        System.out.println("Received conversationId in rag/ask: " + conversationId);
+        return ragService.ragAnswerWithAdvisor(question, collectionName,conversationId);
     }
     
     // 新增接口：删除知识库
